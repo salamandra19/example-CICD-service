@@ -12,7 +12,9 @@ setup_env: &setup_env
             export GOLANGCI_LINT_VER=1.15.0
 
             env | sort > /tmp/env.new
-            ! diff /tmp/env.old /tmp/env.new | grep '^> ' | sed 's/^>/export/' >> $BASH_ENV
+            ! diff /tmp/env.old /tmp/env.new | grep '^> ' | sed 's/^>/export/'
+            ! diff /tmp/env.old /tmp/env.new | grep '^> ' | sed 's/^> //' >> $BASH_ENV
+            cat $BASH_ENV
             env | grep _VER | sort > /tmp/tools.ver
 
 jobs:
