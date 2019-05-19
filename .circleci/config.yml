@@ -75,16 +75,17 @@ jobs:
                     docker tag $IMAGE_TAG ${IMAGE_TAG%:*}:latest
                     docker push ${IMAGE_TAG%:*}:latest
 
-    # deploy:
-    #     docker:
-    #         - image: "cpdpro/baseimage:build-alpine"
-    #     steps:
-    #         - checkout
-    #         - *setup_env
-    #         - deploy:
-    #             name: Deploy to staging
-    #             command: |
-    #                 ./deploy_swarm ubuntu@example-cicd-service.salamandra.powerman.name
+    deploy:
+        docker:
+            - image: "cpdpro/baseimage:build-alpine"
+        steps:
+            - checkout
+            - *setup_env
+            - deploy:
+                name: Deploy to staging
+                command: |
+                    env | grep ^EXAMPLE_ | install -m 0600 /dev/stdin .env
+                    ./deploy_swarm root@salamandra.powerman.name
 
 workflows:
     default:
@@ -96,9 +97,9 @@ workflows:
                 filters:
                     branches:
                         only: master
-            # - deploy:
-            #     requires:
-            #         - build-and-release
-            #     filters:
-            #         branches:
-            #             only: master
+            - deploy:
+                requires:
+                    - build-and-release
+                filters:
+                    branches:
+                        only: master
