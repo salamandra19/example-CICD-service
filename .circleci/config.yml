@@ -39,8 +39,7 @@ jobs:
                     golangci-lint --version | tee /dev/stderr | grep -wq $GOLANGCI_LINT_VER ||
                         curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b /go/bin v$GOLANGCI_LINT_VER
                     go get -v github.com/mattn/goveralls
-            - run: go test -mod=readonly -v -race ./...
-            - run: golangci-lint run
+            - run: ./test -mod=readonly -v -race
             - run: goveralls -service=circle-ci
             - save_cache:
                 when: always
