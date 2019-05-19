@@ -12,9 +12,7 @@ setup_env: &setup_env
             export GOLANGCI_LINT_VER=1.15.0
 
             env | sort > /tmp/env.new
-            ! diff -u /tmp/env.old /tmp/env.new | sed -n '/^+[^+]/s/^./export /p'
-            ! diff -u /tmp/env.old /tmp/env.new | sed -n '/^+[^+]/s/^./export /p' >> $BASH_ENV
-            cat $BASH_ENV
+            ! diff -u /tmp/env.old /tmp/env.new | sed -n '/^+[^+]/s/^.//p' >> $BASH_ENV
             env | grep _VER | sort > /tmp/tools.ver
 
 jobs:
@@ -87,9 +85,7 @@ jobs:
                 name: Deploy to staging
                 command: |
                     env | grep ^EXAMPLE_ | install -m 0600 /dev/stdin .env
-                    echo $BASH_ENV
-                    cat $BASH_ENV
-                    env
+                    env | sort
                     ./deploy_swarm root@salamandra.powerman.name
 
 workflows:

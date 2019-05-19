@@ -5,7 +5,7 @@ test -n "$1" || die "Usage: IMAGE_TAG=… SERVICE=… $0 ssh_user@swarm.host"
 set -x -e -o pipefail
 scp -o StrictHostKeyChecking=no docker-service.yml "$1":$SERVICE.yml
 scp -p .env "$1":$SERVICE.env
-env
+env | sort
 ssh "$1" " \
 	env \"\$(<$SERVICE.env)\" IMAGE_TAG='$IMAGE_TAG'                        \
 	docker stack deploy --with-registry-auth -c $SERVICE.yml $SERVICE       \
