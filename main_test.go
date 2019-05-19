@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/powerman/check"
@@ -13,13 +11,8 @@ import (
 
 func TestCountService(tt *testing.T) {
 	t := check.T(tt)
-	var mu sync.Mutex
-	var n, num int
 
-	h := countHandler{
-		mu: mu,
-		n:  n,
-	}
+	h := countHandler{}
 	r := httptest.NewRequest("GET", "/count", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
@@ -29,6 +22,5 @@ func TestCountService(tt *testing.T) {
 	rawbody, err := ioutil.ReadAll(res.Body)
 	t.Nil(err)
 	body := string(rawbody)
-	num++
-	t.Contains(body, strconv.Itoa(num))
+	t.Equal(body, "hello world")
 }

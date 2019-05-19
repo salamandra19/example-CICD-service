@@ -2,24 +2,19 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"sync"
+
+	"github.com/powerman/structlog"
 )
 
-type countHandler struct {
-	mu sync.Mutex
-	n  int
-}
+type countHandler struct{}
 
 func (h *countHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.n++
-	fmt.Fprintf(w, "count is %d\n", h.n)
+	fmt.Fprintf(w, "hello world")
 }
 
 func main() {
+	var log = *structlog.New()
 	http.Handle("/count", new(countHandler))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
