@@ -85,7 +85,6 @@ jobs:
                 name: Deploy to staging
                 command: |
                     env | grep ^EXAMPLE_ | install -m 0600 /dev/stdin .env
-                    env | sort
                     ./deploy_swarm root@salamandra.powerman.name
 
 workflows:
