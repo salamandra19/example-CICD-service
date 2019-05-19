@@ -1,18 +1,31 @@
 version: 2.1
 
+# Snippets for jobs:
+setup_env: &setup_env
+    run:
+        name: Setup environment
+        command: |
+            env | sort > /tmp/env.old
+
+            export SERVICE=example-cicd-service
+            export IMAGE_TAG=salamandra19/$SERVICE:$CIRCLE_SHA1
+            export GOLANGCI_LINT_VER=1.15.0
+
+            env | sort > /tmp/env.new
+            ! diff /tmp/env.old /tmp/env.new | grep '^> ' | sed 's/^>/export/' >> $BASH_ENV
+            env | grep _VER | sort > /tmp/tools.ver
+
 jobs:
     test:
         docker:
             - image: circleci/golang:1
-        environment:
-            GOLANGCI_LINT_VER: 1.15.0
         steps:
             - checkout
+            - *setup_env
             - run:
                 name: Initialize
                 command: |
                     rmdir /go/*/ # fix owner/permission
-                    env | grep _VER | sort > /tmp/tools.ver
             - restore_cache:
                 keys:
                     - v1-{{ checksum "/tmp/tools.ver" }}-{{ checksum "go.mod" }}-{{ .Branch }}
@@ -26,8 +39,7 @@ jobs:
                     golangci-lint --version | tee /dev/stderr | grep -wq $GOLANGCI_LINT_VER ||
                         curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b /go/bin v$GOLANGCI_LINT_VER
                     go get -v github.com/mattn/goveralls
-            - run: go test -mod=readonly -v -race ./...
-            - run: golangci-lint run
+            - run: ./test -mod=readonly -v -race
             - run: goveralls -service=circle-ci
             - save_cache:
                 when: always
@@ -37,32 +49,56 @@ jobs:
                     - /go/pkg/
                     - /go/src/
                     - ~/.cache/go-build/
-    release:
+
+    build-and-release:
         docker:
-            - image: circleci/golang:1
+            - image: "cpdpro/baseimage:build-golang"
         environment:
-            GHR_VER: 0.12.0
+            GOFLAGS: "-mod=readonly"
         steps:
             - checkout
-            - run:
-                name: Install tools
+            - setup_remote_docker
+            - *setup_env
+            - restore_cache:
+                keys:
+                    - v1-{{ checksum "/tmp/tools.ver" }}-{{ checksum "go.mod" }}-{{ .Branch }}
+                    - v1-{{ checksum "/tmp/tools.ver" }}-{{ checksum "go.mod" }}-
+                    - v1-{{ checksum "/tmp/tools.ver" }}-
+                    - v1-
+            - run: ./build -v
+            - run: docker build -t $IMAGE_TAG .
+            - deploy:
+                name: Upload to Docker Hub
                 command: |
-                    curl -sfL https://github.com/tcnksm/ghr/releases/download/v${GHR_VER}/ghr_v${GHR_VER}_linux_amd64.tar.gz |
-                        tar xzf - -C /tmp && mv /tmp/ghr_v${GHR_VER}_linux_amd64/ghr /go/bin/
-            - run: ./release
+                    docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+                    docker push $IMAGE_TAG
+                    docker tag $IMAGE_TAG ${IMAGE_TAG%:*}:latest
+                    docker push ${IMAGE_TAG%:*}:latest
+
+    # deploy:
+    #     docker:
+    #         - image: "cpdpro/baseimage:build-alpine"
+    #     steps:
+    #         - checkout
+    #         - *setup_env
+    #         - deploy:
+    #             name: Deploy to staging
+    #             command: |
+    #                 ./deploy_swarm ubuntu@example-cicd-service.salamandra.powerman.name
 
 workflows:
-    test-and-release:
+    default:
         jobs:
-            - test:
-                filters:
-                    tags:
-                        only: /v.*/
-            - release:
+            - test
+            - build-and-release:
                 requires:
                     - test
                 filters:
-                    tags:
-                        only: /v.*/
                     branches:
-                        ignore: /.*/
+                        only: master
+            # - deploy:
+            #     requires:
+            #         - build-and-release
+            #     filters:
+            #         branches:
+            #             only: master
