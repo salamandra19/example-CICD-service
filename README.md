@@ -9,10 +9,10 @@ Download binary for your OS manually from
 [releases](https://github.com/salamandra19/example-CICD-servise/releases)
 ## Usage
 
-Just run it and it'll count your visit.
+Just run it and it'll greet whole world.
 
 ```
 $ example-CICD-service
-count is 1
+hello world
 $
 ```
