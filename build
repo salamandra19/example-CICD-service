@@ -16,7 +16,6 @@ ver="$(gitver)"
 
 set -x -e -o pipefail
 
-export GOFLAGS="-mod=readonly"
 export CGO_ENABLED=0
 
 rm -rf bin/
