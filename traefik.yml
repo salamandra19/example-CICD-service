@@ -14,9 +14,13 @@ services:
         image: "traefik:2.0.0-alpha4" # This is the latest version at the moment.
         labels:
             traefik.enable: "true"
-            traefik.http.routers.traefik.entrypoints: "http,https"
+            traefik.http.services.traefik-ui.loadbalancer.server.port: 8080
+            traefik.http.middlewares.https-only.redirectscheme.scheme: "https"
             traefik.http.routers.traefik.rule: "Host(`traefik.salamandra.powerman.name`)"
-            traefik.http.services.traefik.loadbalancer.server.port: 8080
+            traefik.http.routers.traefik.middlewares: "https-only"
+            traefik.http.routers.traefik-tls.rule: "Host(`traefik.salamandra.powerman.name`)"
+            traefik.http.routers.traefik-tls.tls: "true"
+            traefik.http.routers.traefik-tls.service: "traefik-ui"
         networks:
             example:
         ports:
@@ -33,13 +37,14 @@ services:
             --providers.docker
             --providers.docker.exposedbydefault=false
             --providers.docker.watch
-            --log
-            --accesslog
-            --log.level=debug
-            --acme.acmelogging
+            --providers.docker.network=example
             --acme.email=powerman@powerman.name
             --acme.storage=/data/acme.json
             --acme.onhostrule=true
             --acme.entrypoint=https
             --acme.httpchallenge
             --acme.httpchallenge.entrypoint=http
+            --log
+            --log.level=debug
+            --accesslog
+            --acme.acmelogging
